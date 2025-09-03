@@ -74,6 +74,10 @@ func connectDB(host, user, password, dbname, port string) (*gorm.DB, error) {
 
 func createUser(db *gorm.DB, user User) error {
 	ctx := context.Background()
+	_, err := gorm.G[User](db).Where("email = ?", user.Email).First(ctx)
+	if err == nil {
+		return fmt.Errorf("user with email %s already exists", user.Email)
+	}
 	result := gorm.G[User](db).Create(ctx, &user)
 	return result
 }
@@ -90,14 +94,25 @@ func deleteUser(db *gorm.DB, userID int) error {
 	return nil
 }
 
-func getUsers(c *gin.Context, db *gorm.DB) {
-	var users []User
-	result := db.Find(&users)
-	if result.Error != nil {
-		c.JSON(500, gin.H{"error": "Failed to fetch users"})
-		return
+func deleteAllUsers(db *gorm.DB) error {
+	ctx := context.Background()
+	rowsAffected, err := gorm.G[User](db).Where("1 = 1").Delete(ctx)
+	if rowsAffected == 0 {
+		return fmt.Errorf("no users to delete")
 	}
-	c.JSON(200, users)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func getUsers(db *gorm.DB) ([]User, error) {
+	ctx := context.Background()
+	users, _ := gorm.G[User](db).Find(ctx)
+	if len(users) == 0 {
+		return nil, fmt.Errorf("no users found")
+	}
+	return users, nil
 }
 
 func main() {
@@ -116,30 +131,41 @@ func main() {
 
 	fmt.Println("Successfully connected to the database")
 
-	migrationError := db.AutoMigrate(&User{}, &Author{}, &Category{}, &Quote{})
-	if migrationError != nil {
-		panic("failed to migrate database")
-	}
+	/*
+		migrationError := db.AutoMigrate(&User{}, &Author{}, &Category{}, &Quote{})
+		if migrationError != nil {
+			panic("failed to migrate database")
+		}
 
-	fmt.Println("Database migrated successfully")
+		fmt.Println("Database migrated successfully")
+	*/
 
 	router := gin.Default()
+
 	router.GET("/users", func(c *gin.Context) {
-		getUsers(c, db)
+		users, err := getUsers(db)
+		if err != nil {
+			c.JSON(500, gin.H{"error": "Failed to fetch users: " + err.Error()})
+			return
+		}
+		c.JSON(200, users)
 	})
 
 	router.POST("/users/create", func(c *gin.Context) {
-		newUser := User{Name: "Kamila", Surname: "Bissenbayeva", Email: "kamila.bissenbayeva@mywife.com", Password: "pwd123"}
+		var newUser User
+		if err := c.ShouldBindJSON(&newUser); err != nil {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
 		err := createUser(db, newUser)
 		if err != nil {
-			c.JSON(500, gin.H{"error": "Failed to create user"})
+			c.JSON(500, gin.H{"error": "Failed to create user: " + err.Error()})
 			return
 		}
 		c.JSON(200, gin.H{"message": "User created successfully"})
 	})
 
 	router.DELETE("/users/delete/:id", func(c *gin.Context) {
-		// Get user ID from URL parameter
 		userID, convErr := strconv.Atoi(c.Param("id"))
 		if convErr != nil {
 			c.JSON(400, gin.H{"error": "Invalid user ID"})
@@ -147,10 +173,19 @@ func main() {
 		}
 		err := deleteUser(db, userID)
 		if err != nil {
-			c.JSON(500, gin.H{"error": "Failed to delete user"})
+			c.JSON(500, gin.H{"error": "Failed to delete user: " + err.Error()})
 			return
 		}
 		c.JSON(200, gin.H{"message": "User deleted successfully"})
+	})
+
+	router.DELETE("/users/delete-all", func(c *gin.Context) {
+		err := deleteAllUsers(db)
+		if err != nil {
+			c.JSON(500, gin.H{"error": "Failed to delete all users: " + err.Error()})
+			return
+		}
+		c.JSON(200, gin.H{"message": "All users deleted successfully"})
 	})
 
 	router.Run()
