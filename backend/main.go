@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -56,7 +57,7 @@ type Quote struct {
 
 func loadEnv() {
 	// load .env file
-	err := godotenv.Load()
+	err := godotenv.Load("../.env")
 	if err != nil {
 		fmt.Println("Error loading .env file")
 	}
@@ -75,6 +76,18 @@ func createUser(db *gorm.DB, user User) error {
 	ctx := context.Background()
 	result := gorm.G[User](db).Create(ctx, &user)
 	return result
+}
+
+func deleteUser(db *gorm.DB, userID int) error {
+	ctx := context.Background()
+	rowsAffected, err := gorm.G[User](db).Where("id = ?", userID).Delete(ctx)
+	if rowsAffected == 0 {
+		return fmt.Errorf("no user found with id %d", userID)
+	}
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func getUsers(c *gin.Context, db *gorm.DB) {
@@ -113,6 +126,31 @@ func main() {
 	router := gin.Default()
 	router.GET("/users", func(c *gin.Context) {
 		getUsers(c, db)
+	})
+
+	router.POST("/users/create", func(c *gin.Context) {
+		newUser := User{Name: "Kamila", Surname: "Bissenbayeva", Email: "kamila.bissenbayeva@mywife.com", Password: "pwd123"}
+		err := createUser(db, newUser)
+		if err != nil {
+			c.JSON(500, gin.H{"error": "Failed to create user"})
+			return
+		}
+		c.JSON(200, gin.H{"message": "User created successfully"})
+	})
+
+	router.DELETE("/users/delete/:id", func(c *gin.Context) {
+		// Get user ID from URL parameter
+		userID, convErr := strconv.Atoi(c.Param("id"))
+		if convErr != nil {
+			c.JSON(400, gin.H{"error": "Invalid user ID"})
+			return
+		}
+		err := deleteUser(db, userID)
+		if err != nil {
+			c.JSON(500, gin.H{"error": "Failed to delete user"})
+			return
+		}
+		c.JSON(200, gin.H{"message": "User deleted successfully"})
 	})
 
 	router.Run()
