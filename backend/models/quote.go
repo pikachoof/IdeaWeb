@@ -10,3 +10,10 @@ type Quote struct {
 	Categories []Category `gorm:"many2many:quote_categories;"`
 	LikeCount  uint       `gorm:"default:0" json:"like_count"`
 }
+
+/*
+TODO:
+1) CRUD for Quotes
+2) CRUD for CommentLikes
+3) Authentification (Most probably JWT (Or Sessions))
+*/
