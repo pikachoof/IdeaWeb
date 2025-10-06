@@ -4,26 +4,13 @@ import (
 	"IdeaWeb/initializations"
 	"IdeaWeb/models"
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
-
-/*
-What do I need for this file?
-1) Get all quotes
-2) Create a quote
-3) Delete a quote
-
-That's it.
-
-User: (Name, Surname, Email, Password)
-Quote: (Author[Author[]], Uploader[User], Text, Categories[Categories[]])
-Author: (Name)
-Category: (Name)
-*/
 
 func loadEnv() {
 	// load .env file
@@ -35,6 +22,8 @@ func loadEnv() {
 
 func main() {
 	loadEnv()
+
+	log.Print("Hello Logger!")
 
 	db, err := initializations.ConnectDB(
 		os.Getenv("POSTGRES_HOSTNAME"),
@@ -60,6 +49,7 @@ func main() {
 
 	router := gin.Default()
 
+	// User routes
 	router.GET("/users", func(c *gin.Context) {
 		users, err := models.GetUsers(db)
 		if err != nil {
@@ -68,7 +58,6 @@ func main() {
 		}
 		c.JSON(200, users)
 	})
-
 	router.POST("/users/create", func(c *gin.Context) {
 		var newUser models.User
 		if err := c.ShouldBindJSON(&newUser); err != nil {
@@ -82,21 +71,19 @@ func main() {
 		}
 		c.JSON(200, gin.H{"message": "User created successfully"})
 	})
-
 	router.DELETE("/users/delete/:id", func(c *gin.Context) {
 		userID, convErr := strconv.Atoi(c.Param("id"))
 		if convErr != nil {
 			c.JSON(400, gin.H{"error": "Invalid user ID"})
 			return
 		}
-		err := models.DeleteUser(db, userID)
+		err := models.DeleteUser(db, uint(userID))
 		if err != nil {
 			c.JSON(500, gin.H{"error": "Failed to delete user: " + err.Error()})
 			return
 		}
 		c.JSON(200, gin.H{"message": "User deleted successfully"})
 	})
-
 	router.DELETE("/users/delete-all", func(c *gin.Context) {
 		err := models.DeleteAllUsers(db)
 		if err != nil {
@@ -106,7 +93,8 @@ func main() {
 		c.JSON(200, gin.H{"message": "All users deleted successfully"})
 	})
 
-	router.POST("quotes/like/:id", func(c *gin.Context) {
+	// Quote routes
+	router.POST("/quotes/like/:id", func(c *gin.Context) {
 		var req models.UpdateQuoteLikeRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(400, gin.H{"error": "Invalid JSON"})
@@ -119,8 +107,7 @@ func main() {
 		}
 		c.JSON(200, gin.H{"message": "Quote liked successfully"})
 	})
-
-	router.POST("quotes/dislike/:id", func(c *gin.Context) {
+	router.POST("/quotes/dislike/:id", func(c *gin.Context) {
 		var req models.UpdateQuoteLikeRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(400, gin.H{"error": "Invalid JSON"})
@@ -133,4 +120,6 @@ func main() {
 		}
 		c.JSON(200, gin.H{"message": "Quote disliked successfully"})
 	})
+
+	router.Run()
 }

@@ -8,11 +8,11 @@ import (
 )
 
 type User struct {
-	ID       uint   `gorm:"primaryKey" json:"id"`
-	Name     string `json:"name"`
-	Surname  string `json:"surname"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	ID           uint   `gorm:"primaryKey" json:"id"`
+	Name         string `json:"name"`
+	Surname      string `json:"surname"`
+	Email        string `json:"email"`
+	PasswordHash string `json:"-"`
 }
 
 func CreateUser(db *gorm.DB, user User) error {
@@ -25,7 +25,7 @@ func CreateUser(db *gorm.DB, user User) error {
 	return result
 }
 
-func DeleteUser(db *gorm.DB, userID int) error {
+func DeleteUser(db *gorm.DB, userID uint) error {
 	ctx := context.Background()
 	rowsAffected, err := gorm.G[User](db).Where("id = ?", userID).Delete(ctx)
 	if rowsAffected == 0 {
@@ -47,6 +47,15 @@ func DeleteAllUsers(db *gorm.DB) error {
 		return err
 	}
 	return nil
+}
+
+func GetUserByID(db *gorm.DB) (User, error) {
+	ctx := context.Background()
+	user, err := gorm.G[User](db).Where("id = ?", user.ID).First(ctx)
+	if err == nil {
+		return nil, fmt.Errorf("not user found with id %d", user.ID)
+	}
+	return user, nil
 }
 
 func GetUsers(db *gorm.DB) ([]User, error) {

@@ -21,7 +21,7 @@ func AddAuthor(db *gorm.DB, firstName string, lastName string) error {
 	}
 	_, err := gorm.G[Category](db).Where("first_name = ? AND last_name", firstName, lastName).First(ctx)
 	if err != nil {
-		return fmt.Errorf("author with firstname %s and lastname %s already exists")
+		return fmt.Errorf("author with firstname %s and lastname %s already exists", firstName, lastName)
 	}
 	err = gorm.G[Author](db).Create(ctx, &author)
 	if err != nil {
