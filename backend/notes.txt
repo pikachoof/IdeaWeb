@@ -1,0 +1,44 @@
+Authentication:
+- User wants to access data, quotes for this case, and they want to upload their own quotes.
+- For that, after they upload the quotes, I need to know their ID, to fetch the quotes afterwards.
+- So I need some kind of identification for the user.
+- This is the case for Authentication
+
+User sends:
+- Name
+- Surname
+- Email
+- Password
+
+And I register them in the system.
+
+The password is hashed and the other credentials are stored in the system,
+in the Users table, maybe together with the Role, even.
+
+The Login would lookup the user in the Users table, and if they find the email, they check the password, by checking the stored salt of the user,
+afterwards, the system hashes the input password, and if hashedInput == passwordHash, the user enters, and they're given an authorization token,
+which would be used to manage user data, for instance:
+- Profile
+- User's quotes
+- User's collections
+- User's comments
+
+Others don't need to be able to view my info,
+for example in the moodle, if others could enter, they would just ruin my grades.
+And I could ruin theirs, so everything stays personalized.
+
+Login:
+- Email
+- Password
+
+type AuthModel struct {
+	db sql.DB
+}
+
+func (*m AuthModel) Register(name, surname, email, password string) (string, error) {
+    // Check if the user is already registered.
+	result, err := db.QueryRow("SELECT email FROM users WHERE email = $1", emiail).Scan(&id)
+	if result.RowsAffected()
+}
+
+ctx := context.Background()
