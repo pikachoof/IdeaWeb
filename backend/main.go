@@ -1,12 +1,12 @@
 package main
 
 import (
-	"IdeaWeb/initializations"
-	"IdeaWeb/models"
+	"IdeaWeb/db"
+	"IdeaWeb/handlers"
+	"IdeaWeb/middleware"
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -25,7 +25,7 @@ func main() {
 
 	log.Print("Hello Logger!")
 
-	db, err := initializations.ConnectDB(
+	db, err := db.ConnectDB(
 		os.Getenv("POSTGRES_HOSTNAME"),
 		os.Getenv("POSTGRES_USER"),
 		os.Getenv("POSTGRES_PASSWORD"),
@@ -48,5 +48,42 @@ func main() {
 	*/
 
 	router := gin.Default()
-	router.Run()
+	router.Use(middleware.AuthMiddleware)
+
+	admin := router.Group("/admin")
+	admin.Use(middleware.AdminRoleMiddleware)
+	{
+		adminUsers := admin.Group("/users")
+		{
+			adminUsers.GET("", handlers.GetAllUsers)
+			adminUsers.GET("/:id", handlers.GetUser)
+			adminUsers.PATCH("/:id/set-admin", handlers.SetAdminUser)
+			adminUsers.PATCH("/:id/set-regular-user", handlers.SetRegularUser)
+		}
+
+		adminQuotes := admin.Group("/quotes")
+		{
+			adminQuotes.GET("", handlers.GetAllQuotes)
+			adminQuotes.GET("/:id", handlers.GetQuote)
+			adminQuotes.PATCH("/:id/approve", handlers.ApproveQuote)
+			adminQuotes.PATCH("/:id/reject", handlers.RejectQuote)
+		}
+	}
+
+	user := router.Group("/user")
+	user.Use(middleware.UserRoleMiddleware)
+	{
+		userQuotes := user.Group("/quotes")
+		{
+			userQuotes.GET("", handlers.GetAllUserQuotes)
+			userQuotes.GET("/:id", handlers.GetUserQuote)
+			userQuotes.POST("/submissions", handlers.SubmitQuote)
+			userQuotes.DELETE("/submissions/:id", handlers.RemoveSubmission)
+			userQuotes.DELETE("/:id", handlers.DeleteUserQuote)
+		}
+	}
+
+	if err := router.Run(":8080"); err != nil {
+		log.Fatal("Server failed to start: ", err)
+	}
 }

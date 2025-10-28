@@ -1,4 +1,4 @@
-package initializations
+package db
 
 import (
 	"fmt"

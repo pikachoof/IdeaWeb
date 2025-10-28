@@ -1,32 +1,33 @@
 package models
 
-import (
-	"time"
+import "time"
 
-	"gorm.io/gorm"
+type UserRole string
+
+const (
+	RegularUser UserRole = "user"
+	Admin       UserRole = "admin"
 )
 
 type User struct {
-	ID           uint   `gorm:"primaryKey" json:"id"`
-	Name         string `json:"name"`
-	Surname      string `json:"surname"`
-	Email        string `json:"email"`
-	PasswordHash string `json:"-"`
+	ID           uint      `json:"id"`
+	Name         string    `json:"name"`
+	Surname      string    `json:"surname"`
+	Email        string    `json:"email"`
+	PasswordHash string    `json:"-"`
+	Role         UserRole  `json:"role"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }
 
 type LoginRequest struct {
-	Email	 string `json:"email" binding:"reequired,email"`
-	Password string `json:"password" binding:"required,min=6"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 type RegisterRequest struct {
-	Email string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=6"`
-	Role string `json:"role" binding:"oneof=user admin"`
-}
-
-type AuthResponse struct {
-	User *User `json:"user"`
-	AccessToken string `json:"access_token"`
-	ExpiresAt int64 `json:"expires_at"`
+	Name     string `json:"name"`
+	Surname  string `json:"surname"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
