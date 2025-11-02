@@ -13,15 +13,29 @@ This handler will register & login users and will authenticate via 2 following m
 2) JWT
 */
 
-func LoginHandler(c *gin.Context) {
-	var loginReq models.LoginRequest
+type AuthSessionsHandler struct {
+	ss *services.SessionService
+}
 
-	if err := c.ShouldBindJSON(&loginReq); err != nil {
+func NewAuthSessionsHandler (ss *services.SessionService) {
+	return &AuthSessionsHandler{
+		ss: ss,
+	}
+}
+
+func Login(c *gin.Context) {
+	
+}
+
+func Register(c *gin.Context) {
+	var registerReq models.RegisterRequest
+
+	if err := c.ShouldBinJSON(&registerReq); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid login format",
+			"error": "Invalid registration format"
 		})
 		return
 	}
 
-	// Else, authenticate the user and create a session for them
+
 }

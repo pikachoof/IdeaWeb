@@ -9,10 +9,11 @@ import (
 )
 
 type UserRepositoryInterface interface {
-	Create(newUser models.User) error // Will be reserved for creating users by admin, the admin sets the password,
+	Create(newUser *models.User) error // Will be reserved for creating users by admin, the admin sets the password,
 	GetAll() ([]*models.User, error)
-	GetByID(id uint) (*models.User, error)
-	SetRole(id uint, newRole models.UserRole)
+	FindByID(id uint) (*models.User, error)
+	FindByEmail(email string) (*models.User, error)
+	SetRole(id uint, newRole *models.UserRole)
 	Update(id uint, updatedUser *models.User) error
 	DeleteByID(id uint) error
 	Exists(id uint) (bool, error)
@@ -86,7 +87,7 @@ func (r *UserRepository) GetAll() ([]*models.User, error) {
 	return users, nil
 }
 
-func (r *UserRepository) GetByID(id uint) (*models.User, error) {
+func (r *UserRepository) FindByID(id uint) (*models.User, error) {
 	query := `
 		SELECT id, name, surname, email, role FROM Users
 		WHERE id = $1
@@ -94,6 +95,32 @@ func (r *UserRepository) GetByID(id uint) (*models.User, error) {
 
 	user := &models.User{}
 	err := r.db.QueryRow(query, id).Scan(
+		&user.ID,
+		&user.Name,
+		&user.Surname,
+		&user.Email,
+		&user.Role,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("user not found")
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("database error: %w", err)
+	}
+
+	return user, nil
+}
+
+func (r *UserRepository) FindByEmail(email string) (*models.User, error) {
+	query := `
+		SELECT id, name, surname, email, role FROM Users
+		WHERE email = $1
+	`
+
+	user := &models.User{}
+	err := r.db.QueryRow(query, email).Scan(
 		&user.ID,
 		&user.Name,
 		&user.Surname,
@@ -160,7 +187,7 @@ func (r *UserRepository) Update(id uint, updatedUser *models.User) error {
 	return nil
 }
 
-func (r *UserRepository) Delete(id uint) error {
+func (r *UserRepository) DeleteByID(id uint) error {
 	exists, err := r.Exists(id)
 	if err != nil {
 		return fmt.Errorf("failed to find user: %w", err)
