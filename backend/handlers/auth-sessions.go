@@ -2,40 +2,74 @@ package handlers
 
 import (
 	"IdeaWeb/models"
+	"IdeaWeb/services"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
-/*
-This handler will register & login users and will authenticate via 2 following methods:
-1) Session-based with cookies
-2) JWT
-*/
-
-type AuthSessionsHandler struct {
-	ss *services.SessionService
+type SessionHandler struct {
+	sessionService *services.SessionService
 }
 
-func NewAuthSessionsHandler (ss *services.SessionService) {
-	return &AuthSessionsHandler{
-		ss: ss,
-	}
+func NewSessionHandler(sessionService *services.SessionService) *SessionHandler {
+	return &SessionHandler{sessionService: sessionService}
 }
 
-func Login(c *gin.Context) {
-	
-}
-
-func Register(c *gin.Context) {
-	var registerReq models.RegisterRequest
-
-	if err := c.ShouldBinJSON(&registerReq); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid registration format"
-		})
-		return
+func (h *SessionHandler) Register(c *gin.Context) {
+	var registerReq *models.RegisterRequest
+	if err := c.ShouldBindJSON(registerReq); err != nil {
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"error": "invalid input"},
+		)
 	}
 
+	err := h.sessionService.Register(registerReq)
+	if err != nil {
+		c.JSON(
+			http.StatusUnauthorized,
+			gin.H{"error": "failed to register user"}
+		)
+	}
+
+	c.JSON(
+		http.StatusOK,
+		gin.H{"error": "registration successful"}
+	)
+}
+
+func (h *SessionHandler) Login(c *gin.Context) {
+	var loginReq *models.LoginRequest
+	if err := c.ShouldBindJSON(loginReq); err != nil {
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"error": "invalid input"}
+		)
+	}
+
+	sessionID, err := h.sessionService.Login(loginReq)
+	if err != nil {
+		c.JSON(
+			http.StatusUnauthorized,
+			gin.H{"error": "failed to login user"}
+		)
+	}
+
+	c.SetCookie(
+		"session_id",
+		sessionID,
+		3600,
+		"/",
+		"localhost",
+		true,
+		true
+	)
+
+	c.JSON(
+		http.StatusOK,
+		gin.H{"message": "login successful"}
+	)
 
 }

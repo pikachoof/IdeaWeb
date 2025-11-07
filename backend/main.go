@@ -2,8 +2,6 @@ package main
 
 import (
 	"IdeaWeb/db"
-	"IdeaWeb/handlers"
-	"IdeaWeb/middleware"
 	"fmt"
 	"log"
 	"os"
@@ -47,43 +45,46 @@ func main() {
 		fmt.Println("Database migrated successfully")
 	*/
 
-	router := gin.Default()
-	router.Use(middleware.AuthMiddleware)
+	r := gin.Default()
 
-	admin := router.Group("/admin")
-	admin.Use(middleware.AdminRoleMiddleware)
-	{
-		adminUsers := admin.Group("/users")
+	/*
+		r.Use(middleware.AuthMiddleware)
+
+		admin := r.Group("/admin")
+		admin.Use(middleware.AdminRoleMiddleware)
 		{
-			adminUsers.GET("", handlers.GetAllUsers)
-			adminUsers.GET("/:id", handlers.GetUser)
-			adminUsers.PATCH("/:id/set-admin", handlers.SetAdminUser)
-			adminUsers.PATCH("/:id/set-regular-user", handlers.SetRegularUser)
+			adminUsers := admin.Group("/users")
+			{
+				adminUsers.GET("", handlers.GetAllUsers)
+				adminUsers.GET("/:id", handlers.GetUser)
+				adminUsers.PATCH("/:id/set-admin", handlers.SetAdminUser)
+				adminUsers.PATCH("/:id/set-regular-user", handlers.SetRegularUser)
+			}
+
+			adminQuotes := admin.Group("/quotes")
+			{
+				adminQuotes.GET("", handlers.GetAllQuotes)
+				adminQuotes.GET("/:id", handlers.GetQuote)
+				adminQuotes.PATCH("/:id/approve", handlers.ApproveQuote)
+				adminQuotes.PATCH("/:id/reject", handlers.RejectQuote)
+			}
 		}
 
-		adminQuotes := admin.Group("/quotes")
+		user := r.Group("/user")
+		user.Use(middleware.UserRoleMiddleware)
 		{
-			adminQuotes.GET("", handlers.GetAllQuotes)
-			adminQuotes.GET("/:id", handlers.GetQuote)
-			adminQuotes.PATCH("/:id/approve", handlers.ApproveQuote)
-			adminQuotes.PATCH("/:id/reject", handlers.RejectQuote)
+			userQuotes := user.Group("/quotes")
+			{
+				userQuotes.GET("", handlers.GetAllUserQuotes)
+				userQuotes.GET("/:id", handlers.GetUserQuote)
+				userQuotes.POST("/submissions", handlers.SubmitQuote)
+				userQuotes.DELETE("/submissions/:id", handlers.RemoveSubmission)
+				userQuotes.DELETE("/:id", handlers.DeleteUserQuote)
+			}
 		}
-	}
+	*/
 
-	user := router.Group("/user")
-	user.Use(middleware.UserRoleMiddleware)
-	{
-		userQuotes := user.Group("/quotes")
-		{
-			userQuotes.GET("", handlers.GetAllUserQuotes)
-			userQuotes.GET("/:id", handlers.GetUserQuote)
-			userQuotes.POST("/submissions", handlers.SubmitQuote)
-			userQuotes.DELETE("/submissions/:id", handlers.RemoveSubmission)
-			userQuotes.DELETE("/:id", handlers.DeleteUserQuote)
-		}
-	}
-
-	if err := router.Run(":8080"); err != nil {
+	if err := r.Run(":8080"); err != nil {
 		log.Fatal("Server failed to start: ", err)
 	}
 }

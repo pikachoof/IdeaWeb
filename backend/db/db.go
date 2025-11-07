@@ -1,15 +1,15 @@
 package db
 
 import (
+	"database/sql"
 	"fmt"
 
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-func ConnectDB(host, user, password, dbname, port string) (*gorm.DB, error) {
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s", host, user, password, dbname, port)
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+func ConnectDB(host, user, password, dbname, port string) (*sql.DB, error) {
+	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", user, password, host, port, dbname)
+	db, err := sql.Open("pgx", connStr)
 	if err != nil {
 		return nil, err
 	}
