@@ -1,12 +1,13 @@
 package utils
 
+/*
 import (
 	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 
-var jwtSecret = []byte("MY_SECRET_KEY")
+// var jwtSecret = []byte("MY_SECRET_KEY")
 
 type Claims struct {
 	UserID string `json:"user_id"`
@@ -66,3 +67,4 @@ func RefreshToken(tokenString string) (string, error) {
 
 	return GenerateJWT(claims.UserID, claims.Email, claims.Role)
 }
+*/

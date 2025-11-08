@@ -32,7 +32,7 @@ func (m *AuthMiddlewareModel) AuthMiddleware(c *gin.Context) {
 	if err != nil {
 		c.JSON(
 			http.StatusInternalServerError,
-			gin.H{"error": "unable to parse session id"}
+			gin.H{"error": "unable to parse session id"},
 		)
 	}
 

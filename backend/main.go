@@ -2,6 +2,9 @@ package main
 
 import (
 	"IdeaWeb/db"
+	"IdeaWeb/handlers"
+	"IdeaWeb/repositories"
+	"IdeaWeb/services"
 	"fmt"
 	"log"
 	"os"
@@ -20,8 +23,6 @@ func loadEnv() {
 
 func main() {
 	loadEnv()
-
-	log.Print("Hello Logger!")
 
 	db, err := db.ConnectDB(
 		os.Getenv("POSTGRES_HOSTNAME"),
@@ -45,7 +46,15 @@ func main() {
 		fmt.Println("Database migrated successfully")
 	*/
 
+	userRepo := repositories.NewUserRepository(db)
+	sessionRepo := repositories.NewSessionRepository(db)
+	sessionService := services.NewSessionService(userRepo, sessionRepo)
+	sessionHandlers := handlers.NewSessionHandler(sessionService)
+
 	r := gin.Default()
+
+	r.POST("/login", sessionHandlers.Login)
+	r.POST("/register", sessionHandlers.Register)
 
 	/*
 		r.Use(middleware.AuthMiddleware)
